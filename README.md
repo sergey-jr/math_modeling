@@ -1,5 +1,7 @@
 # math_modeling
 regression analysis
+### 1. LSM - least square method
+### 2. chi squared
 ## requirements:
 <ul>
 <li>
