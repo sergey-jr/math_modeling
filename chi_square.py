@@ -35,33 +35,34 @@ def set_narrow(arr, arr1):
     return np.array(arr2), np.array(arr1)
 
 
-# initialize
 variant = int(input("Вариант: "))
 file = open(f'./variants/normalized/var{variant}.json')
 data = json.loads(file.read())
 x = np.array(data['x'], dtype=float)
-N = len(x)
+N = len(x)  # count of points
 m = 9  # round(3.32 * math.log(N) + 1)
-p, intervals = np.histogram(x, m)
+p, intervals = np.histogram(x, m)  # p - array of count of points that fall into the intervals
 a, b = x.min(), x.max()
 print(a, b)
 print("Исходное множество:")
 print("p=", p)
 print("delta=", intervals)
 print("m=", m)
-p, delta = set_narrow(p, intervals)
+p, delta = set_narrow(p, intervals)  # narrowing of the set
 m1 = len(p)
 print("Суженное множество:")
 print("p=", p)
 print("delta=", delta)
 print("m1=", m1)
+# plotting bar chart
 X = np.array([(delta[j] + delta[j + 1]) / 2 for j in range(m1)])
 Y = np.array([p[j] / (delta[j + 1] - delta[j]) for j in range(m1)])
-# plotting bar chart
 fig = plt.figure(dpi=100)
 plt.bar(X, Y, 1)
+# set interval min=-inf; max=inf
 delta[0] = -np.inf
 delta[-1] = np.inf
+# setting distribution type
 if data['low'] == 'lognorm':
     mu, sigma = np.log(x).mean(), np.sqrt(np.log(x).var())
     dist = stats.lognorm(sigma, scale=np.exp(mu))
@@ -73,10 +74,14 @@ elif data['low'] == 'exp':
 else:
     dist = stats.uniform(a, b)
     print(a, b)
+# setting real percentage of fall into intervals multiply by N
 nt = np.array([dist.cdf(delta[j + 1]) - dist.cdf(delta[j]) for j in range(m1 - 1)]) * N
 print("nt", nt)
+# calculating chi
 chi = np.array([(p[j] - nt[j]) ** 2 / nt[j] for j in range(m1 - 1)]).sum()
+# finding table value
 krit = stats.chi2.ppf(1 - 0.05, m - 3)
+# plotting
 h = 10 ** -3
 r = np.arange(a - h * 2, b + h * 2, h)
 y1 = dist.pdf(r) * N

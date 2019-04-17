@@ -39,17 +39,15 @@ functions = data['functions']
 f = StringFunction(functions, independent_variables=('x', 'a', 'b', 'c', 'd'), globals=globals())
 f_arr = data['f_arr']
 x = array(data['x'])
-N = len(x)
+N = len(x)  # count of points
 y = array(data['y'])
-x_lin = linspace(x.min(), x.max(), 1000)
+x_lin = linspace(x.min(), x.max(), 1000)  # divide interval for 1000 points
 
 print(centered('Y', '='))
-w, _ = opt.curve_fit(f, x, y)
+w, _ = opt.curve_fit(f, x, y)  # finding coefficients of model Y
 print("b=", f"[{vec_to_str(w)}]")
-tk = stats.t.ppf(1 - alpha / 2, N - len(w))
-fk = stats.f.ppf(1 - alpha, len(w) - 1, N - len(w))
-y_model = f(x_lin, *w)  # for fit
-y_new = f(x, *w)
+y_model = f(x_lin, *w)  # for fit Y
+y_new = f(x, *w)  # for finding q_glob, q_reg
 f = StringFunction(f_arr, globals=globals())
 fi = array([array(f(item)) for item in x])
 fi_t = fi.transpose()
@@ -57,11 +55,15 @@ fi_t_fi = matmul(fi_t, fi)
 c = inv(fi_t_fi)
 q_glob = ((y - y.mean()) ** 2).sum()
 q_reg = ((y_new - y.mean()) ** 2).sum()
-q_ost = q_glob - q_reg
-s = 1 / (N - len(w)) * ((y - y_new) ** 2).sum()
 r = q_reg / q_glob
+s = 1 / (N - len(w)) * ((y - y_new) ** 2).sum()
 D = array([s * array(f(item)).transpose().dot(c).dot(array(f(item))) for item in x])
+# Student's criteria finding
+tk = stats.t.ppf(1 - alpha / 2, N - len(w))  # finding table value of T-distribution for model Y
 STD = array([w[i] / (sqrt(s * c[i][i])) for i in range(len(w))])
+# Fisher's criteria finding
+fk = stats.f.ppf(1 - alpha, len(w) - 1, N - len(w))  # finding table value of F-distribution for model Y
+q_ost = q_glob - q_reg
 F = (q_reg / (len(w) - 1)) / (q_ost / (N - len(w)))
 print('Q_общ={:.5} Q_рег={:.5} s^2={:.5} r^2={:.2%} d={:.5}'.format(q_glob, q_reg, pow(s, 0.5), r, D.max()))
 print(centered('Распределение Стьюдента', ' '))
@@ -75,22 +77,24 @@ print("F=", F)
 print("F_кр=", "{:.5}".format(fk))
 
 print(centered('Y2', '='))
-w1, _ = opt.curve_fit(Y2, x, y)
+w1, _ = opt.curve_fit(Y2, x, y)  # finding coefficients of model Y2
 print("b=", f"[{vec_to_str(w1)}]")
-tk_1 = stats.t.ppf(1 - alpha / 2, N - len(w1))
-fk_1 = stats.f.ppf(1 - alpha, len(w1) - 1, N - len(w1))
 y2 = Y2(x_lin, *w1)  # for fit
-y2_new = Y2(x, *w1)
+y2_new = Y2(x, *w1)  # for finding q_glob, q_reg
 fi = array([Y2_arr(item) for item in x])
 fi_t = fi.transpose()
 fi_t_fi = matmul(fi_t, fi)
 c = inv(fi_t_fi)
 q_reg = ((y2_new - y.mean()) ** 2).sum()
-q_ost = q_glob - q_reg
 s = 1 / (N - len(w1)) * ((y - y2_new) ** 2).sum()
 r = q_reg / q_glob
 D = array([s * Y2_arr(item).transpose().dot(c).dot(Y2_arr(item)) for item in x])
+# Student's criteria finding
+tk_1 = stats.t.ppf(1 - alpha / 2, N - len(w1))  # finding table value of T-distribution for model Y2
 STD = array([w1[i] / (sqrt(s * c[i][i])) for i in range(len(w1))])
+# Fisher's criteria finding
+fk_1 = stats.f.ppf(1 - alpha, len(w1) - 1, N - len(w1))  # finding table value of F-distribution for model Y2
+q_ost = q_glob - q_reg
 F = (q_reg / (len(w1) - 1)) / (q_ost / (N - len(w1)))
 print('Q_общ={:.5} Q_рег={:.5} s^2={:.5} r^2={:.2%} d={:.5}'.format(q_glob, q_reg, pow(s, 0.5), r, D.max()))
 print(centered('Распределение Стьюдента', ' '))
